@@ -831,7 +831,7 @@
       }
     </style>
   </head>
-  <body>
+  <body data-theme="dark">
     <div class="app-shell">
       <aside class="sidebar">
         <div class="sidebar-inner">
@@ -914,7 +914,7 @@
           <header class="sim-header">
             <div class="header-actions">
               <button class="header-button" id="bestButton" type="button">Best</button>
-              <button class="header-button icon-button" id="themeButton" type="button" aria-label="Activer le mode sombre" title="Mode sombre">
+              <button class="header-button icon-button" id="themeButton" type="button" aria-label="Activer le mode clair" title="Mode clair">
                 <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 7 7 0 1 0 20.5 14.5Z"></path>
                 </svg>
@@ -1961,6 +1961,12 @@ fitness_of_process = Δfitness / coût + transfert</div>
         els.themeButton.setAttribute('title', dark ? 'Mode clair' : 'Mode sombre');
       }
 
+      function setTheme(theme) {
+        document.body.dataset.theme = theme === 'light' ? 'light' : 'dark';
+        localStorage.setItem('hyperagents-theme', document.body.dataset.theme);
+        render();
+      }
+
       function syncGraphTitle() {
         const titles = {
           archive: "Archive Graph 3D: (A, M) -> (A', M')",
@@ -2112,8 +2118,7 @@ fitness_of_process = Δfitness / coût + transfert</div>
 
       els.themeButton.addEventListener('click', () => {
         const dark = document.body.dataset.theme === 'dark';
-        document.body.dataset.theme = dark ? 'light' : 'dark';
-        render();
+        setTheme(dark ? 'light' : 'dark');
       });
 
       els.modeGrid.addEventListener('click', (event) => {
@@ -2147,6 +2152,7 @@ fitness_of_process = Δfitness / coût + transfert</div>
       });
 
       window.addEventListener('resize', render);
+      document.body.dataset.theme = localStorage.getItem('hyperagents-theme') || 'dark';
       reset();
       requestAnimationFrame(tick);
     </script>
