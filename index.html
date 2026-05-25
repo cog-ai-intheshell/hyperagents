@@ -1,0 +1,2154 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HyperAgents Reflexive Evolution Simulator</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --blue: #1677e8;
+        --blue-dark: #0f5fbd;
+        --green: #27AE60;
+        --red: #EB5757;
+        --orange: #e87511;
+        --ink: #111827;
+        --text: #111827;
+        --muted: #4b5563;
+        --line: #dfe5ee;
+        --panel: #ffffff;
+        --page: #f6f8fb;
+        --sidebar: #fbfcfe;
+        --field-bg: #ffffff;
+        --field-border: #ccd6e1;
+        --control-bg: #ffffff;
+        --control-bg-hover: #f4f8ff;
+        --control-text: #0f5fbd;
+        --subtle-line: #edf1f6;
+        --primary-button-text: #ffffff;
+        --primary-gradient: linear-gradient(180deg, #1a83f5 0%, #0f72df 100%);
+        --primary-gradient-hover: linear-gradient(180deg, #2490ff 0%, #1069ce 100%);
+        --primary-shadow: 0 7px 16px rgba(22, 119, 232, 0.22);
+        --card-shadow: 0 3px 16px rgba(17, 24, 39, 0.04);
+        --scene-bg: #ffffff;
+        --canvas-bg: #ffffff;
+        --canvas-grid: #d8dee8;
+        --canvas-axis: #8b96a8;
+        --canvas-task: #1677e8;
+        --canvas-meta: #e87511;
+        --canvas-memory: #27AE60;
+        --canvas-fail: #EB5757;
+        --canvas-edge: rgba(17, 24, 39, 0.22);
+        --canvas-zone: rgba(22, 119, 232, 0.12);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body[data-theme="dark"] {
+        color-scheme: dark;
+        --bg1: #191919;
+        --bg2: #222222;
+        --primary: #5D71FC;
+        --blue: #5D71FC;
+        --blue-dark: #5D71FC;
+        --page: var(--bg1);
+        --panel: var(--bg2);
+        --sidebar: var(--bg2);
+        --scene-bg: var(--bg1);
+        --canvas-bg: var(--bg1);
+        --ink: #f8f8f8;
+        --text: #f8f8f8;
+        --muted: rgba(248, 248, 248, 0.62);
+        --line: transparent;
+        --subtle-line: transparent;
+        --field-border: transparent;
+        --field-bg: var(--bg1);
+        --control-bg: var(--bg1);
+        --control-bg-hover: var(--bg2);
+        --control-text: var(--primary);
+        --primary-button-text: #f8f8f8;
+        --primary-gradient: linear-gradient(180deg, var(--primary) 0%, var(--primary) 100%);
+        --primary-gradient-hover: linear-gradient(180deg, var(--primary) 0%, var(--primary) 100%);
+        --primary-shadow: none;
+        --card-shadow: none;
+        --canvas-grid: rgba(248, 248, 248, 0.08);
+        --canvas-axis: rgba(248, 248, 248, 0.42);
+        --canvas-task: #5D71FC;
+        --canvas-meta: #f89540;
+        --canvas-memory: #27AE60;
+        --canvas-fail: #EB5757;
+        --canvas-edge: rgba(248, 248, 248, 0.2);
+        --canvas-zone: rgba(93, 113, 252, 0.15);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        color: var(--text);
+        background: var(--page);
+      }
+
+      body,
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button,
+      input[type="range"],
+      select {
+        cursor: pointer;
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: clamp(286px, 19vw, 380px) minmax(0, 1fr) clamp(300px, 22vw, 420px);
+        width: 100vw;
+        height: 100vh;
+        min-height: 720px;
+      }
+
+      .sidebar,
+      .inspector {
+        min-width: 0;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: var(--sidebar);
+      }
+
+      .sidebar {
+        border-right: 1px solid var(--line);
+      }
+
+      .inspector {
+        padding: 18px;
+        border-left: 1px solid var(--line);
+      }
+
+      .sidebar-inner {
+        padding: 18px 18px 22px;
+      }
+
+      .brand {
+        padding: 0 0 14px;
+      }
+
+      .brand h1 {
+        margin: 0 0 4px;
+        font-size: 24px;
+        line-height: 1.15;
+        font-weight: 800;
+      }
+
+      .brand p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.25;
+      }
+
+      .control-section,
+      .info-card {
+        padding: 15px 0 12px;
+        border-top: 1px solid var(--line);
+      }
+
+      .control-section h2,
+      .info-card h2,
+      .data-card h2,
+      .mini-card h2 {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.1;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .primary-button,
+      .secondary-button,
+      .header-button,
+      .segment-button {
+        border-radius: 8px;
+        font-weight: 700;
+      }
+
+      .primary-button,
+      .secondary-button {
+        width: 100%;
+        height: 44px;
+      }
+
+      .primary-button {
+        margin: 12px 0 10px;
+        border: 0;
+        color: var(--primary-button-text);
+        background: var(--primary-gradient);
+        font-size: 16px;
+        box-shadow: var(--primary-shadow);
+      }
+
+      .secondary-button {
+        margin: 0 0 16px;
+        border: 1px solid var(--field-border);
+        color: var(--control-text);
+        background: var(--control-bg);
+        font-size: 14px;
+      }
+
+      .primary-button:hover {
+        background: var(--primary-gradient-hover);
+      }
+
+      .secondary-button:hover,
+      .header-button:hover,
+      .segment-button:hover {
+        background: var(--control-bg-hover);
+      }
+
+      .button-row,
+      .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .header-button {
+        min-width: 42px;
+        height: 36px;
+        padding: 0 12px;
+        border: 1px solid var(--field-border);
+        color: var(--control-text);
+        background: var(--control-bg);
+        font-size: 13px;
+      }
+
+      .icon-button {
+        display: inline-grid;
+        place-items: center;
+        width: 42px;
+        padding: 0;
+      }
+
+      .theme-icon {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+
+      .theme-icon-sun {
+        display: none;
+      }
+
+      body[data-theme="dark"] .theme-icon-moon {
+        display: none;
+      }
+
+      body[data-theme="dark"] .theme-icon-sun {
+        display: block;
+      }
+
+      .segment-button {
+        height: 36px;
+        padding: 0 8px;
+        border: 1px solid var(--field-border);
+        color: var(--muted);
+        background: var(--control-bg);
+        font-size: 12px;
+      }
+
+      .segment-button.active {
+        color: var(--primary-button-text);
+        border-color: transparent;
+        background: var(--blue);
+      }
+
+      .slider-field,
+      .toggle-field,
+      .field-label {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px 10px;
+        width: 100%;
+        margin-top: 15px;
+        font-size: 13px;
+      }
+
+      .slider-field output {
+        min-width: 54px;
+        text-align: right;
+        color: var(--text);
+      }
+
+      .slider-field input {
+        grid-column: 1 / -1;
+        width: 100%;
+        margin: 0;
+      }
+
+      input[type="range"] {
+        --range-progress: 50%;
+        --slider-fill: var(--blue);
+        --slider-track: #191919;
+        appearance: none;
+        height: 22px;
+        background: transparent;
+        accent-color: var(--slider-fill);
+      }
+
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 8px;
+        background: linear-gradient(90deg, var(--slider-fill) 0%, var(--slider-fill) var(--range-progress), var(--slider-track) var(--range-progress), var(--slider-track) 100%);
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        margin-top: -5px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--slider-fill);
+      }
+
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 8px;
+        background: var(--slider-track);
+      }
+
+      input[type="range"]::-moz-range-progress {
+        height: 6px;
+        border-radius: 8px;
+        background: var(--slider-fill);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--slider-fill);
+      }
+
+      .toggle-field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 34px;
+        padding: 0 2px;
+      }
+
+      .toggle-field input {
+        width: 34px;
+        height: 18px;
+        margin: 0;
+        appearance: none;
+        position: relative;
+        flex: 0 0 auto;
+        background: var(--control-bg);
+        border: 1px solid var(--field-border);
+        border-radius: 8px;
+      }
+
+      .toggle-field input::before {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 8px;
+        background: var(--muted);
+        transition: transform 120ms ease, background 120ms ease;
+      }
+
+      .toggle-field input:checked {
+        background: var(--blue);
+      }
+
+      .toggle-field input:checked::before {
+        transform: translateX(16px);
+        background: var(--primary-button-text);
+      }
+
+      .field-label {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        color: var(--muted);
+      }
+
+      .field-label select {
+        width: 100%;
+        height: 38px;
+        border: 1px solid var(--field-border);
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--field-bg);
+        padding: 0 10px;
+      }
+
+      .metric-stack,
+      .phase-list,
+      .operator-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .metric-stack span,
+      .phase-row,
+      .operator-row {
+        padding: 10px 12px;
+        border: 1px solid var(--subtle-line);
+        border-radius: 8px;
+        background: var(--field-bg);
+      }
+
+      .metric-stack span,
+      .phase-row,
+      .operator-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--muted);
+        gap: 10px;
+      }
+
+      .metric-stack strong,
+      .phase-row strong,
+      .operator-row strong {
+        color: var(--text);
+        text-align: right;
+      }
+
+      .workspace {
+        min-width: 0;
+        height: 100vh;
+        padding: 18px;
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) clamp(250px, 31vh, 360px);
+        gap: 18px;
+      }
+
+      .simulation-card,
+      .notebook-card,
+      .data-card,
+      .mini-card {
+        overflow: hidden;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--card-shadow);
+      }
+
+      .simulation-card {
+        min-height: 0;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .sim-header {
+        min-height: 68px;
+        padding: 14px 16px 12px;
+        border-bottom: 1px solid var(--subtle-line);
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        float: right;
+      }
+
+      .sim-header h2 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        line-height: 1.15;
+      }
+
+      .sim-header p,
+      .muted-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .canvas-frame {
+        position: relative;
+        min-height: 0;
+        background: var(--scene-bg);
+      }
+
+      #archiveCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: var(--canvas-bg);
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .canvas-frame.dragging #archiveCanvas {
+        cursor: grabbing;
+      }
+
+      .canvas-legend {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 8px;
+        max-width: min(460px, calc(100% - 28px));
+        pointer-events: none;
+      }
+
+      .legend-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 26px;
+        padding: 0 9px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--panel) 88%, transparent);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 8px;
+      }
+
+      .tooltip {
+        position: absolute;
+        min-width: 180px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--card-shadow);
+        pointer-events: none;
+        transform: translate(12px, 12px);
+        opacity: 0;
+        transition: opacity 100ms ease;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .tooltip.visible {
+        opacity: 1;
+      }
+
+      .tooltip strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      .notebook-card {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+      }
+
+      .chart-panel,
+      .heatmap-panel {
+        min-width: 0;
+        min-height: 0;
+        padding: 14px 16px 16px;
+      }
+
+      .chart-panel {
+        border-right: 1px solid var(--subtle-line);
+      }
+
+      .chart-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .chart-head h2,
+      .heatmap-panel h2 {
+        margin-bottom: 4px;
+      }
+
+      #timelineCanvas {
+        display: block;
+        width: 100%;
+        height: calc(100% - 42px);
+        min-height: 155px;
+        margin-top: 10px;
+      }
+
+      .heatmap-scroll {
+        width: 100%;
+        height: calc(100% - 42px);
+        min-height: 155px;
+        margin-top: 10px;
+        overflow: auto;
+      }
+
+      .heatmap-inner {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .heatmap-column-head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: minmax(84px, 1.45fr) repeat(4, minmax(28px, 0.72fr));
+        align-items: center;
+        min-height: 20px;
+        padding-bottom: 5px;
+        background: var(--panel);
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .heatmap-column-head span {
+        min-width: 0;
+        padding-left: 3px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      #heatmapCanvas {
+        display: block;
+        width: 100%;
+        height: 330px;
+      }
+
+      .inspector-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .data-card,
+      .mini-card {
+        padding: 14px;
+      }
+
+      .agent-title {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .agent-title h2 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        line-height: 1.15;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 8px;
+        color: var(--primary-button-text);
+        background: var(--blue);
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .capability-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .capability-row {
+        display: grid;
+        grid-template-columns: minmax(0, 92px) minmax(0, 1fr) 42px;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .bar {
+        height: 7px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--muted) 18%, transparent);
+      }
+
+      .bar i {
+        display: block;
+        height: 100%;
+        width: 0;
+        border-radius: 8px;
+        background: var(--blue);
+      }
+
+      .formula {
+        margin: 10px 0 0;
+        padding: 11px 12px;
+        border: 1px solid var(--subtle-line);
+        border-radius: 8px;
+        background: var(--field-bg);
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 12px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+
+      .phase-row span,
+      .operator-row span {
+        min-width: 0;
+      }
+
+      .phase-row b,
+      .operator-row b {
+        display: block;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      .phase-row small,
+      .operator-row small {
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+      }
+
+      .swatch {
+        width: 8px;
+        height: 32px;
+        flex: 0 0 auto;
+        border-radius: 8px;
+        background: var(--blue);
+      }
+
+      .phase-meter {
+        width: 52px;
+        height: 7px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--muted) 18%, transparent);
+        flex: 0 0 auto;
+      }
+
+      .phase-meter i {
+        display: block;
+        height: 100%;
+        width: 0;
+        border-radius: 8px;
+        background: var(--blue);
+      }
+
+      .empty-state {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      @media (max-width: 1120px) {
+        .app-shell {
+          grid-template-columns: clamp(270px, 27vw, 340px) minmax(0, 1fr);
+        }
+
+        .inspector {
+          display: none;
+        }
+      }
+
+      @media (max-width: 760px) {
+        html,
+        body {
+          overflow: auto;
+        }
+
+        .app-shell {
+          display: block;
+          height: auto;
+          min-height: 100vh;
+        }
+
+        .sidebar,
+        .inspector {
+          display: block;
+          height: auto;
+          border: 0;
+        }
+
+        .workspace {
+          height: auto;
+          min-height: 720px;
+          overflow: visible;
+          grid-template-rows: minmax(460px, 70vh) auto;
+          padding: 12px;
+        }
+
+        .notebook-card {
+          grid-template-columns: 1fr;
+        }
+
+        .chart-panel {
+          border-right: 0;
+          border-bottom: 1px solid var(--subtle-line);
+        }
+
+        .header-actions {
+          float: none;
+          justify-content: flex-start;
+          margin-bottom: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-inner">
+          <header class="brand">
+            <h1>HyperAgents</h1>
+            <p>Evolution réflexive dans un espace de programmes.</p>
+          </header>
+
+          <section class="control-section">
+            <h2>Simulation</h2>
+            <button class="primary-button" id="playButton" type="button">Lancer</button>
+            <button class="secondary-button" id="stepButton" type="button">Une mutation</button>
+            <div class="button-row">
+              <button class="header-button" id="resetButton" type="button">Reset</button>
+              <button class="header-button" id="seedButton" type="button">Nouvelle graine</button>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <h2>Dynamique</h2>
+            <label class="slider-field">
+              <span>Vitesse</span>
+              <output id="speedOut">2/s</output>
+              <input id="speed" type="range" min="1" max="8" value="2">
+            </label>
+            <label class="slider-field">
+              <span>Exploration</span>
+              <output id="exploreOut">42%</output>
+              <input id="explore" type="range" min="0" max="100" value="42">
+            </label>
+            <label class="slider-field">
+              <span>Réflexivité méta</span>
+              <output id="reflexOut">58%</output>
+              <input id="reflex" type="range" min="0" max="100" value="58">
+            </label>
+            <label class="slider-field">
+              <span>Pression transfert</span>
+              <output id="transferOut">36%</output>
+              <input id="transfer" type="range" min="0" max="100" value="36">
+            </label>
+            <label class="slider-field">
+              <span>Bruit mutationnel</span>
+              <output id="noiseOut">18%</output>
+              <input id="noise" type="range" min="0" max="55" value="18">
+            </label>
+          </section>
+
+          <section class="control-section">
+            <h2>Mode</h2>
+            <div class="mode-grid" id="modeGrid">
+              <button class="segment-button active" data-mode="archive" type="button">Archive</button>
+              <button class="segment-button" data-mode="latent" type="button">Latent</button>
+              <button class="segment-button" data-mode="phases" type="button">Phases</button>
+              <button class="segment-button" data-mode="transfer" type="button">Transfert</button>
+            </div>
+            <label class="toggle-field">
+              <span>Attracteurs cognitifs</span>
+              <input id="showAttractors" type="checkbox" checked>
+            </label>
+            <label class="toggle-field">
+              <span>Labels des meilleurs agents</span>
+              <input id="showLabels" type="checkbox" checked>
+            </label>
+          </section>
+
+          <section class="info-card">
+            <h2>Article simulé</h2>
+            <div class="metric-stack">
+              <span><em>Cadre</em><strong>DGM-H</strong></span>
+              <span><em>Objet</em><strong>(A, M)</strong></span>
+              <span><em>Archive</em><strong id="archiveCount">1</strong></span>
+              <span><em>Génération</em><strong id="generationCount">0</strong></span>
+            </div>
+          </section>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <section class="simulation-card">
+          <header class="sim-header">
+            <div class="header-actions">
+              <button class="header-button" id="bestButton" type="button">Best</button>
+              <button class="header-button icon-button" id="themeButton" type="button" aria-label="Activer le mode sombre" title="Mode sombre">
+                <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 7 7 0 1 0 20.5 14.5Z"></path>
+                </svg>
+                <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path d="M12 2v2"></path>
+                  <path d="M12 20v2"></path>
+                  <path d="m4.93 4.93 1.41 1.41"></path>
+                  <path d="m17.66 17.66 1.41 1.41"></path>
+                  <path d="M2 12h2"></path>
+                  <path d="M20 12h2"></path>
+                  <path d="m6.34 17.66-1.41 1.41"></path>
+                  <path d="m19.07 4.93-1.41 1.41"></path>
+                </svg>
+              </button>
+            </div>
+            <h2 id="graphTitle">Archive Graph: (A, M) -> (A', M')</h2>
+            <p id="simSubtitle">Chaque point est un hyperagent; chaque arc est une mutation générée par le processus méta.</p>
+          </header>
+          <div class="canvas-frame" id="canvasFrame">
+            <canvas id="archiveCanvas"></canvas>
+            <div class="canvas-legend">
+              <span class="legend-pill"><i class="legend-dot" style="background: var(--canvas-task)"></i>task fitness</span>
+              <span class="legend-pill"><i class="legend-dot" style="background: var(--canvas-meta)"></i>meta fitness</span>
+              <span class="legend-pill"><i class="legend-dot" style="background: var(--canvas-memory)"></i>mémoire</span>
+              <span class="legend-pill"><i class="legend-dot" style="background: var(--canvas-fail)"></i>branche faible</span>
+            </div>
+            <div class="tooltip" id="tooltip"></div>
+          </div>
+        </section>
+
+        <section class="notebook-card">
+          <div class="chart-panel">
+            <div class="chart-head">
+              <div>
+                <h2>Temporal Evolution</h2>
+                <p class="muted-copy">Fitness agent, fitness du processus d'amélioration, diversité.</p>
+              </div>
+              <button class="header-button" id="fastForwardButton" type="button">+25</button>
+            </div>
+            <canvas id="timelineCanvas"></canvas>
+          </div>
+          <div class="heatmap-panel">
+            <h2>Heatmap des mutations</h2>
+            <p class="muted-copy">Survie, transfert et recombinaison par opérateur.</p>
+            <div class="heatmap-scroll" aria-label="Heatmap scrollable des mutations" tabindex="0">
+              <div class="heatmap-inner">
+                <div class="heatmap-column-head" aria-hidden="true">
+                  <span></span>
+                  <span>surv.</span>
+                  <span>trans.</span>
+                  <span>rec.</span>
+                  <span>mort</span>
+                </div>
+                <canvas id="heatmapCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="inspector">
+        <div class="inspector-grid">
+          <section class="data-card">
+            <div class="agent-title">
+              <div>
+                <h2 id="selectedName">Agent A0</h2>
+                <p class="muted-copy" id="selectedMeta">initial prompt reviewer</p>
+              </div>
+              <span class="badge" id="selectedPhase">Survival</span>
+            </div>
+            <div class="metric-stack">
+              <span><em>Task fitness</em><strong id="taskFitness">0.31</strong></span>
+              <span><em>Meta fitness</em><strong id="metaFitness">0.18</strong></span>
+              <span><em>Stabilité</em><strong id="stabilityValue">0.44</strong></span>
+              <span><em>Transfert</em><strong id="transferValue">0.22</strong></span>
+            </div>
+            <div class="capability-list" id="capabilityList"></div>
+          </section>
+
+          <section class="mini-card">
+            <h2>Meta-evolution</h2>
+            <div class="formula" id="formulaBox">(A, M) -> (A', M')
+
+μ_meta(μ_task(A))
+fitness_of_process = Δfitness / coût + transfert</div>
+            <div class="metric-stack">
+              <span><em>Meilleur agent</em><strong id="bestScore">0.31</strong></span>
+              <span><em>Meilleur processus</em><strong id="bestMetaScore">0.18</strong></span>
+              <span><em>Diversité</em><strong id="diversityScore">0.00</strong></span>
+            </div>
+          </section>
+
+          <section class="mini-card">
+            <h2>Phases de développement</h2>
+            <div class="phase-list" id="phaseList"></div>
+          </section>
+
+          <section class="mini-card">
+            <h2>Opérateurs dominants</h2>
+            <div class="operator-list" id="operatorList"></div>
+          </section>
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      const css = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+      const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const format = (value) => value.toFixed(2);
+      const percent = (value) => `${Math.round(value * 100)}%`;
+
+      function mulberry32(seed) {
+        return function rand() {
+          let t = seed += 0x6D2B79F5;
+          t = Math.imul(t ^ t >>> 15, t | 1);
+          t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      const phases = [
+        { id: 'survival', label: 'Survival', color: '#EB5757', cue: 'format, erreurs, parsing' },
+        { id: 'reasoning', label: 'Structured reasoning', color: '#1677e8', cue: 'rubrics, CoT, checklists' },
+        { id: 'metacognition', label: 'Meta-cognition', color: '#27AE60', cue: 'mémoire, tracking, calibration' },
+        { id: 'optimization', label: 'Optimization of optimization', color: '#e87511', cue: 'search adaptatif, compute-aware' },
+      ];
+
+      const capabilityNames = [
+        ['reasoning', 'Raisonnement'],
+        ['robustness', 'Robustesse'],
+        ['reflexivity', 'Réflexivité'],
+        ['stability', 'Stabilité'],
+        ['memory', 'Mémoire'],
+        ['transfer', 'Transfert'],
+      ];
+
+      const attractors = [
+        { label: 'Memory', x: 0.66, y: 0.64, z: 0.72, radius: 0.13, color: '#27AE60' },
+        { label: 'Rubrics', x: 0.48, y: 0.44, z: 0.22, radius: 0.12, color: '#1677e8' },
+        { label: 'Calibration', x: 0.73, y: 0.48, z: 0.48, radius: 0.11, color: '#e87511' },
+        { label: 'Adaptive search', x: 0.79, y: 0.76, z: 0.78, radius: 0.12, color: '#EB5757' },
+      ];
+
+      const operators = [
+        {
+          id: 'json',
+          label: 'JSON/error handling',
+          cluster: 'survival',
+          phase: 'survival',
+          delta: { robustness: 0.12, stability: 0.07, reasoning: 0.02 },
+          meta: 0.01,
+          cost: 0.08,
+          transfer: 0.03,
+          stability: 0.14,
+        },
+        {
+          id: 'rubric',
+          label: 'Explicit rubric',
+          cluster: 'reasoning',
+          phase: 'reasoning',
+          delta: { reasoning: 0.13, robustness: 0.05, transfer: 0.03 },
+          meta: 0.03,
+          cost: 0.13,
+          transfer: 0.08,
+          stability: 0.06,
+        },
+        {
+          id: 'decompose',
+          label: 'Task decomposition',
+          cluster: 'reasoning',
+          phase: 'reasoning',
+          delta: { reasoning: 0.1, stability: 0.04, reflexivity: 0.04 },
+          meta: 0.04,
+          cost: 0.15,
+          transfer: 0.06,
+          stability: 0.05,
+        },
+        {
+          id: 'memory',
+          label: 'Persistent memory',
+          cluster: 'memory',
+          phase: 'metacognition',
+          delta: { memory: 0.16, transfer: 0.07, reflexivity: 0.06 },
+          meta: 0.1,
+          cost: 0.19,
+          transfer: 0.13,
+          stability: 0.02,
+        },
+        {
+          id: 'tracker',
+          label: 'Performance tracker',
+          cluster: 'memory',
+          phase: 'metacognition',
+          delta: { reflexivity: 0.12, stability: 0.05, memory: 0.06 },
+          meta: 0.13,
+          cost: 0.16,
+          transfer: 0.1,
+          stability: 0.06,
+        },
+        {
+          id: 'calibrate',
+          label: 'Calibration analysis',
+          cluster: 'calibration',
+          phase: 'metacognition',
+          delta: { reflexivity: 0.08, reasoning: 0.06, stability: 0.07 },
+          meta: 0.09,
+          cost: 0.15,
+          transfer: 0.07,
+          stability: 0.09,
+        },
+        {
+          id: 'bias',
+          label: 'Bias detection',
+          cluster: 'calibration',
+          phase: 'metacognition',
+          delta: { robustness: 0.07, reflexivity: 0.07, transfer: 0.05 },
+          meta: 0.07,
+          cost: 0.14,
+          transfer: 0.09,
+          stability: 0.05,
+        },
+        {
+          id: 'explore',
+          label: 'Exploration tuning',
+          cluster: 'search',
+          phase: 'optimization',
+          delta: { reflexivity: 0.09, transfer: 0.09, memory: 0.04 },
+          meta: 0.16,
+          cost: 0.2,
+          transfer: 0.12,
+          stability: -0.02,
+        },
+        {
+          id: 'selection',
+          label: 'Selection rewrite',
+          cluster: 'search',
+          phase: 'optimization',
+          delta: { reflexivity: 0.13, reasoning: 0.04, transfer: 0.06 },
+          meta: 0.18,
+          cost: 0.22,
+          transfer: 0.14,
+          stability: -0.03,
+        },
+        {
+          id: 'compute',
+          label: 'Compute-aware search',
+          cluster: 'search',
+          phase: 'optimization',
+          delta: { stability: 0.08, reflexivity: 0.08, robustness: 0.04 },
+          meta: 0.14,
+          cost: 0.12,
+          transfer: 0.08,
+          stability: 0.1,
+        },
+      ];
+
+      const state = {
+        rand: mulberry32(7341),
+        seed: 7341,
+        playing: false,
+        mode: 'archive',
+        generation: 0,
+        archive: [],
+        edges: [],
+        selectedId: 'A0',
+        hoverId: null,
+        history: [],
+        heatmap: new Map(),
+        operatorWeights: new Map(),
+        lastTick: 0,
+        mutationCarry: 0,
+        view: {
+          rotX: -0.52,
+          rotY: 0.72,
+          zoom: 1,
+          dragging: false,
+          dragX: 0,
+          dragY: 0,
+        },
+        settings: {
+          speed: 2,
+          explore: 0.42,
+          reflex: 0.58,
+          transferPressure: 0.36,
+          noise: 0.18,
+          showAttractors: true,
+          showLabels: true,
+        },
+      };
+
+      const els = {
+        archiveCanvas: document.getElementById('archiveCanvas'),
+        timelineCanvas: document.getElementById('timelineCanvas'),
+        heatmapCanvas: document.getElementById('heatmapCanvas'),
+        frame: document.getElementById('canvasFrame'),
+        tooltip: document.getElementById('tooltip'),
+        playButton: document.getElementById('playButton'),
+        stepButton: document.getElementById('stepButton'),
+        resetButton: document.getElementById('resetButton'),
+        seedButton: document.getElementById('seedButton'),
+        fastForwardButton: document.getElementById('fastForwardButton'),
+        bestButton: document.getElementById('bestButton'),
+        themeButton: document.getElementById('themeButton'),
+        modeGrid: document.getElementById('modeGrid'),
+        speed: document.getElementById('speed'),
+        explore: document.getElementById('explore'),
+        reflex: document.getElementById('reflex'),
+        transfer: document.getElementById('transfer'),
+        noise: document.getElementById('noise'),
+        showAttractors: document.getElementById('showAttractors'),
+        showLabels: document.getElementById('showLabels'),
+        speedOut: document.getElementById('speedOut'),
+        exploreOut: document.getElementById('exploreOut'),
+        reflexOut: document.getElementById('reflexOut'),
+        transferOut: document.getElementById('transferOut'),
+        noiseOut: document.getElementById('noiseOut'),
+        archiveCount: document.getElementById('archiveCount'),
+        generationCount: document.getElementById('generationCount'),
+        selectedName: document.getElementById('selectedName'),
+        selectedMeta: document.getElementById('selectedMeta'),
+        selectedPhase: document.getElementById('selectedPhase'),
+        graphTitle: document.getElementById('graphTitle'),
+        taskFitness: document.getElementById('taskFitness'),
+        metaFitness: document.getElementById('metaFitness'),
+        stabilityValue: document.getElementById('stabilityValue'),
+        transferValue: document.getElementById('transferValue'),
+        capabilityList: document.getElementById('capabilityList'),
+        bestScore: document.getElementById('bestScore'),
+        bestMetaScore: document.getElementById('bestMetaScore'),
+        diversityScore: document.getElementById('diversityScore'),
+        phaseList: document.getElementById('phaseList'),
+        operatorList: document.getElementById('operatorList'),
+        simSubtitle: document.getElementById('simSubtitle'),
+      };
+
+      function initHeatmap() {
+        state.heatmap.clear();
+        state.operatorWeights.clear();
+        operators.forEach((operator) => {
+          state.heatmap.set(operator.id, { survived: 0, failed: 0, transferred: 0, recombined: 0 });
+          state.operatorWeights.set(operator.id, 1);
+        });
+      }
+
+      function evaluate(agent) {
+        const z = agent.z;
+        const synergyMemory = z.memory * z.reflexivity * 0.34;
+        const synergyRubric = z.reasoning * z.stability * 0.2;
+        const synergyTransfer = z.transfer * (z.memory + z.robustness) * 0.16;
+        const task = clamp(
+          0.2 * z.reasoning +
+          0.17 * z.robustness +
+          0.16 * z.stability +
+          0.12 * z.memory +
+          0.12 * z.transfer +
+          0.09 * z.reflexivity +
+          synergyMemory +
+          synergyRubric +
+          synergyTransfer -
+          agent.cost * 0.11,
+        );
+        const meta = clamp(
+          0.24 * z.reflexivity +
+          0.2 * z.memory +
+          0.17 * z.transfer +
+          0.12 * z.reasoning +
+          0.1 * z.stability +
+          synergyMemory +
+          agent.metaBonus,
+        );
+        agent.taskFitness = task;
+        agent.metaFitness = meta;
+        agent.fitness = clamp(0.68 * task + 0.32 * meta);
+      }
+
+      function determinePhase(agent) {
+        if (agent.metaFitness > 0.68 && agent.z.reflexivity > 0.68) return 'optimization';
+        if (agent.z.memory > 0.42 || agent.metaFitness > 0.48) return 'metacognition';
+        if (agent.z.reasoning > 0.42 || agent.z.robustness > 0.5) return 'reasoning';
+        return 'survival';
+      }
+
+      function phaseFor(id) {
+        return phases.find((phase) => phase.id === id) ?? phases[0];
+      }
+
+      function createInitialAgent() {
+        const agent = {
+          id: 'A0',
+          label: 'simple prompt reviewer',
+          generation: 0,
+          parent: null,
+          operator: null,
+          cost: 0.08,
+          metaBonus: 0,
+          z: {
+            reasoning: 0.28,
+            robustness: 0.3,
+            reflexivity: 0.12,
+            stability: 0.36,
+            memory: 0.06,
+            transfer: 0.14,
+          },
+        };
+        evaluate(agent);
+        agent.phase = determinePhase(agent);
+        agent.xJitter = state.rand() * 0.12 - 0.06;
+        agent.yJitter = state.rand() * 0.12 - 0.06;
+        return agent;
+      }
+
+      function reset(seed = state.seed) {
+        state.seed = seed;
+        state.rand = mulberry32(seed);
+        state.playing = false;
+        state.generation = 0;
+        state.archive = [createInitialAgent()];
+        state.edges = [];
+        state.selectedId = 'A0';
+        state.hoverId = null;
+        state.lastTick = 0;
+        state.mutationCarry = 0;
+        state.history = [];
+        initHeatmap();
+        recordHistory();
+        syncControls();
+        render();
+      }
+
+      function bestAgent() {
+        return state.archive.reduce((best, agent) => agent.fitness > best.fitness ? agent : best, state.archive[0]);
+      }
+
+      function bestMetaAgent() {
+        return state.archive.reduce((best, agent) => agent.metaFitness > best.metaFitness ? agent : best, state.archive[0]);
+      }
+
+      function averageFitness() {
+        return state.archive.reduce((sum, agent) => sum + agent.fitness, 0) / state.archive.length;
+      }
+
+      function diversity() {
+        if (state.archive.length < 2) return 0;
+        const sample = state.archive.slice(-80);
+        let total = 0;
+        let count = 0;
+        for (let i = 0; i < sample.length; i += 1) {
+          for (let j = i + 1; j < sample.length; j += 1) {
+            total += latentDistance(sample[i], sample[j]);
+            count += 1;
+          }
+        }
+        return clamp(total / Math.max(1, count) / 1.3);
+      }
+
+      function latentDistance(a, b) {
+        let sum = 0;
+        capabilityNames.forEach(([key]) => {
+          sum += Math.pow(a.z[key] - b.z[key], 2);
+        });
+        return Math.sqrt(sum);
+      }
+
+      function recordHistory() {
+        const best = bestAgent();
+        const meta = bestMetaAgent();
+        state.history.push({
+          generation: state.generation,
+          best: best.fitness,
+          average: averageFitness(),
+          meta: meta.metaFitness,
+          diversity: diversity(),
+          archive: state.archive.length,
+        });
+        if (state.history.length > 180) state.history.shift();
+      }
+
+      function weightedPick(items, weightFn) {
+        const weights = items.map((item) => Math.max(0.0001, weightFn(item)));
+        const total = weights.reduce((sum, weight) => sum + weight, 0);
+        let roll = state.rand() * total;
+        for (let i = 0; i < items.length; i += 1) {
+          roll -= weights[i];
+          if (roll <= 0) return items[i];
+        }
+        return items[items.length - 1];
+      }
+
+      function selectParent() {
+        const best = bestAgent();
+        const recent = state.archive.slice(-70);
+        const pool = state.rand() < state.settings.explore ? recent : state.archive;
+        return weightedPick(pool, (agent) => {
+          const novelty = latentDistance(agent, best);
+          const recency = 1 / (1 + (state.generation - agent.generation) * 0.025);
+          const selection = Math.pow(agent.fitness + 0.08, 1.7);
+          return selection * (1 - state.settings.explore * 0.38) + novelty * state.settings.explore * 0.7 + recency * 0.1;
+        });
+      }
+
+      function selectOperator(parent) {
+        const reflexivity = state.settings.reflex * 0.6 + parent.metaFitness * 0.4;
+        return weightedPick(operators, (operator) => {
+          const phaseBoost = operator.phase === parent.phase ? 1.12 : 1;
+          const metaBoost = 1 + reflexivity * operator.meta * 4.2;
+          const transferBoost = 1 + state.settings.transferPressure * operator.transfer * 3.4;
+          const learned = state.operatorWeights.get(operator.id) ?? 1;
+          const costPenalty = 1 / (1 + operator.cost * (1.15 - parent.z.stability));
+          return phaseBoost * metaBoost * transferBoost * learned * costPenalty;
+        });
+      }
+
+      function maybeRecombine(parent, child) {
+        if (state.archive.length < 7) return null;
+        const chance = 0.04 + parent.metaFitness * 0.12 + state.settings.reflex * 0.07;
+        if (state.rand() > chance) return null;
+        const mate = weightedPick(state.archive, (agent) => agent.metaFitness + agent.z.transfer + 0.05);
+        capabilityNames.forEach(([key]) => {
+          child.z[key] = clamp(lerp(child.z[key], mate.z[key], 0.28 + state.rand() * 0.18));
+        });
+        child.metaBonus += 0.02 + mate.metaFitness * 0.04;
+        return mate;
+      }
+
+      function mutate() {
+        state.generation += 1;
+        const parent = selectParent();
+        const operator = selectOperator(parent);
+        const noiseScale = state.settings.noise;
+        const child = {
+          id: `A${state.generation}`,
+          label: operator.label,
+          generation: state.generation,
+          parent: parent.id,
+          operator: operator.id,
+          cost: clamp(parent.cost * 0.84 + operator.cost * 0.65 + state.rand() * 0.04, 0.02, 0.42),
+          metaBonus: clamp(parent.metaBonus * 0.72 + operator.meta * state.settings.reflex + parent.metaFitness * 0.035),
+          z: {},
+        };
+
+        capabilityNames.forEach(([key]) => {
+          const inherited = parent.z[key] * (0.9 + state.rand() * 0.08);
+          const directed = operator.delta[key] ?? 0;
+          const noise = (state.rand() - 0.5) * noiseScale;
+          const stabilityGuard = parent.z.stability * 0.018;
+          child.z[key] = clamp(inherited + directed + noise + stabilityGuard);
+        });
+
+        child.z.transfer = clamp(child.z.transfer + operator.transfer * state.settings.transferPressure);
+        child.z.stability = clamp(child.z.stability + operator.stability - child.cost * 0.05);
+
+        const recombined = maybeRecombine(parent, child);
+        evaluate(child);
+        child.phase = determinePhase(child);
+        child.xJitter = parent.xJitter * 0.35 + (state.rand() * 0.18 - 0.09);
+        child.yJitter = parent.yJitter * 0.35 + (state.rand() * 0.18 - 0.09);
+
+        const improvement = child.fitness - parent.fitness;
+        const transferred = child.z.transfer > parent.z.transfer + 0.05 || child.metaFitness > parent.metaFitness + 0.06;
+        const heat = state.heatmap.get(operator.id);
+        if (improvement > 0.015) heat.survived += 1;
+        else heat.failed += 1;
+        if (transferred) heat.transferred += 1;
+        if (recombined) heat.recombined += 1;
+
+        const learned = state.operatorWeights.get(operator.id) ?? 1;
+        const reward = improvement > 0 ? 1 + improvement * 0.9 + child.metaFitness * 0.035 : 0.985;
+        state.operatorWeights.set(operator.id, clamp(learned * reward, 0.35, 3.6));
+
+        state.archive.push(child);
+        state.edges.push({
+          from: parent.id,
+          to: child.id,
+          operator: operator.id,
+          gain: improvement,
+          transfer: transferred,
+          recombined: recombined ? recombined.id : null,
+        });
+        if (recombined) {
+          state.edges.push({
+            from: recombined.id,
+            to: child.id,
+            operator: 'recombine',
+            gain: improvement * 0.4,
+            transfer: true,
+            recombined: parent.id,
+          });
+        }
+
+        if (state.archive.length > 170) {
+          const keep = new Set(state.archive.slice(-150).map((agent) => agent.id));
+          keep.add(bestAgent().id);
+          keep.add(bestMetaAgent().id);
+          keep.add(state.selectedId);
+          state.archive = state.archive.filter((agent) => keep.has(agent.id));
+          state.edges = state.edges.filter((edge) => keep.has(edge.from) && keep.has(edge.to));
+        }
+
+        state.selectedId = child.id;
+        recordHistory();
+      }
+
+      function signed(value) {
+        return clamp(value) * 2 - 1;
+      }
+
+      function taskCapability(agent) {
+        return clamp(
+          agent.z.reasoning * 0.32 +
+          agent.z.robustness * 0.22 +
+          agent.z.stability * 0.18 +
+          agent.z.transfer * 0.14 +
+          agent.taskFitness * 0.14,
+        );
+      }
+
+      function metaCapability(agent) {
+        return clamp(
+          agent.z.reflexivity * 0.36 +
+          agent.metaFitness * 0.28 +
+          agent.z.memory * 0.18 +
+          agent.z.transfer * 0.1 +
+          agent.z.stability * 0.08,
+        );
+      }
+
+      function memoryTransfer(agent) {
+        return clamp(agent.z.memory * 0.46 + agent.z.transfer * 0.32 + agent.z.reflexivity * 0.14 + agent.z.stability * 0.08);
+      }
+
+      function latentPoint(agent) {
+        const jitterX = agent.xJitter * 0.28;
+        const jitterZ = agent.yJitter * 0.28;
+        if (state.mode === 'phases') {
+          const index = phases.findIndex((phase) => phase.id === agent.phase);
+          return {
+            x: signed((agent.generation % 42) / 41) + jitterX,
+            y: signed(1 - (index + 0.5) / phases.length),
+            z: signed(metaCapability(agent)) + jitterZ,
+          };
+        }
+        if (state.mode === 'transfer') {
+          return {
+            x: signed(agent.z.transfer) + jitterX,
+            y: signed(agent.metaFitness),
+            z: signed(agent.z.stability * 0.58 + agent.z.robustness * 0.42) + jitterZ,
+          };
+        }
+        if (state.mode === 'latent') {
+          return {
+            x: signed(taskCapability(agent)) + jitterX,
+            y: signed(metaCapability(agent)),
+            z: signed(memoryTransfer(agent)) + jitterZ,
+          };
+        }
+        return {
+          x: signed(agent.generation / Math.max(16, state.generation)) + jitterX * 0.35,
+          y: signed(agent.fitness * 0.72 + agent.metaFitness * 0.2),
+          z: signed(agent.metaFitness * 0.55 + memoryTransfer(agent) * 0.35) + jitterZ * 0.5,
+        };
+      }
+
+      function resizeCanvas(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        const width = Math.max(1, Math.round(rect.width * ratio));
+        const height = Math.max(1, Math.round(rect.height * ratio));
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
+        }
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        return { ctx, width: rect.width, height: rect.height };
+      }
+
+      function projectPoint(point, width, height) {
+        const { rotX, rotY, zoom } = state.view;
+        const cosY = Math.cos(rotY);
+        const sinY = Math.sin(rotY);
+        const cosX = Math.cos(rotX);
+        const sinX = Math.sin(rotX);
+        const x1 = point.x * cosY - point.z * sinY;
+        const z1 = point.x * sinY + point.z * cosY;
+        const y1 = point.y;
+        const y2 = y1 * cosX - z1 * sinX;
+        const z2 = y1 * sinX + z1 * cosX;
+        const perspective = 2.7 / (2.7 + z2);
+        const scale = Math.min(width, height) * 0.27 * zoom;
+        return {
+          x: width * 0.5 + x1 * scale * perspective,
+          y: height * 0.43 - y2 * scale * perspective,
+          depth: z2,
+          perspective,
+          source: point,
+        };
+      }
+
+      function drawLine3D(ctx, width, height, from, to, color, alpha = 1, lineWidth = 1) {
+        const a = projectPoint(from, width, height);
+        const b = projectPoint(to, width, height);
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      function axisLabels() {
+        if (state.mode === 'archive') return { x: 'temps', y: 'fitness', z: 'meta / mémoire' };
+        if (state.mode === 'phases') return { x: 'cycle', y: 'phase', z: 'meta' };
+        if (state.mode === 'transfer') return { x: 'transfert', y: 'meta', z: 'stabilité' };
+        return { x: 'capacité tâche', y: 'meta-cognition', z: 'mémoire / transfert' };
+      }
+
+      function drawSceneGrid(ctx, width, height) {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = css('--canvas-bg');
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = css('--canvas-grid');
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= width; x += 48) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = 0; y <= height; y += 48) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+        ctx.setLineDash([6, 7]);
+        for (let i = -0.85; i <= 0.86; i += 0.425) {
+          drawLine3D(ctx, width, height, { x: -0.9, y: -0.9, z: i }, { x: 0.9, y: -0.9, z: i }, css('--canvas-axis'), 0.25, 1);
+          drawLine3D(ctx, width, height, { x: i, y: -0.9, z: -0.9 }, { x: i, y: -0.9, z: 0.9 }, css('--canvas-axis'), 0.25, 1);
+        }
+        ctx.setLineDash([]);
+        drawLine3D(ctx, width, height, { x: -0.95, y: -0.95, z: -0.95 }, { x: 0.98, y: -0.95, z: -0.95 }, css('--canvas-task'), 0.86, 2);
+        drawLine3D(ctx, width, height, { x: -0.95, y: -0.95, z: -0.95 }, { x: -0.95, y: 0.62, z: -0.95 }, css('--canvas-meta'), 0.86, 2);
+        drawLine3D(ctx, width, height, { x: -0.95, y: -0.95, z: -0.95 }, { x: -0.95, y: -0.95, z: 0.98 }, css('--canvas-memory'), 0.86, 2);
+        ctx.fillStyle = css('--muted');
+        ctx.font = '700 11px Inter, sans-serif';
+        const labels = axisLabels();
+        const xEnd = projectPoint({ x: 1, y: -0.95, z: -0.95 }, width, height);
+        const yEnd = projectPoint({ x: -0.95, y: 0.64, z: -0.95 }, width, height);
+        const zEnd = projectPoint({ x: -0.95, y: -0.95, z: 1 }, width, height);
+        ctx.fillText(labels.x, xEnd.x + 6, xEnd.y + 3);
+        ctx.fillText(labels.y, yEnd.x + 6, yEnd.y + 3);
+        ctx.fillText(labels.z, zEnd.x + 6, zEnd.y + 3);
+      }
+
+      function drawAttractors(ctx, width, height) {
+        if (!state.settings.showAttractors || state.mode === 'archive') return;
+        attractors.forEach((attractor) => {
+          const center = projectPoint({
+            x: signed(attractor.x),
+            y: signed(attractor.y),
+            z: signed(attractor.z),
+          }, width, height);
+          const r = Math.min(width, height) * attractor.radius * 0.42 * center.perspective * state.view.zoom;
+          ctx.strokeStyle = attractor.color;
+          ctx.globalAlpha = 0.3;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([7, 8]);
+          ctx.beginPath();
+          ctx.ellipse(center.x, center.y, r * 1.18, r * 0.72, state.view.rotY * 0.35, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = attractor.color;
+          ctx.font = '800 11px Inter, sans-serif';
+          ctx.fillText(attractor.label, center.x + r * 0.48, center.y - r * 0.32);
+        });
+      }
+
+      function operatorColor(operatorId) {
+        if (operatorId === 'recombine') return css('--canvas-memory');
+        const operator = operators.find((item) => item.id === operatorId);
+        if (!operator) return css('--canvas-edge');
+        if (operator.cluster === 'memory') return css('--canvas-memory');
+        if (operator.cluster === 'calibration') return css('--canvas-meta');
+        if (operator.cluster === 'search') return css('--orange');
+        if (operator.cluster === 'survival') return css('--canvas-fail');
+        return css('--canvas-task');
+      }
+
+      function nodeColor(agent) {
+        if (agent.fitness < averageFitness() * 0.75 && agent.generation > 3) return css('--canvas-fail');
+        if (agent.z.memory > 0.55) return css('--canvas-memory');
+        if (agent.metaFitness > agent.taskFitness + 0.08) return css('--canvas-meta');
+        return css('--canvas-task');
+      }
+
+      function drawArrow(ctx, from, to, color, gain, transfer) {
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = gain > 0 ? (transfer ? 0.56 : 0.42) : 0.2;
+        ctx.lineWidth = gain > 0 ? 1.4 : 0.9;
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawArchive() {
+        const { ctx, width, height } = resizeCanvas(els.archiveCanvas);
+        drawSceneGrid(ctx, width, height);
+        drawAttractors(ctx, width, height);
+
+        const positions = new Map();
+        state.archive.forEach((agent) => {
+          const point = latentPoint(agent);
+          const projected = projectPoint(point, width, height);
+          projected.point = point;
+          positions.set(agent.id, projected);
+        });
+
+        state.edges
+          .map((edge) => ({ edge, from: positions.get(edge.from), to: positions.get(edge.to) }))
+          .filter((item) => item.from && item.to)
+          .sort((a, b) => ((a.from.depth + a.to.depth) - (b.from.depth + b.to.depth)))
+          .forEach(({ edge, from, to }) => {
+            drawArrow(ctx, from, to, operatorColor(edge.operator), edge.gain, edge.transfer);
+          });
+
+        const best = bestAgent();
+        const selected = state.archive.find((agent) => agent.id === state.selectedId);
+        [...state.archive].sort((a, b) => positions.get(a.id).depth - positions.get(b.id).depth).forEach((agent) => {
+          const position = positions.get(agent.id);
+          const radius = (4 + agent.fitness * 7 + agent.metaFitness * 2) * position.perspective;
+          ctx.beginPath();
+          ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = nodeColor(agent);
+          ctx.globalAlpha = agent.id === state.hoverId ? 1 : clamp(0.62 + position.perspective * 0.2, 0.55, 0.9);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          if (agent.id === selected?.id || agent.id === best.id) {
+            ctx.strokeStyle = agent.id === best.id ? css('--orange') : css('--text');
+            ctx.lineWidth = agent.id === best.id ? 2.5 : 1.5;
+            ctx.beginPath();
+            ctx.arc(position.x, position.y, radius + 4, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          if (state.settings.showLabels && (agent.id === best.id || agent.metaFitness > 0.72 || agent.id === selected?.id)) {
+            ctx.fillStyle = css('--text');
+            ctx.font = '800 11px Inter, sans-serif';
+            ctx.fillText(agent.id, position.x + radius + 6, position.y - radius - 3);
+          }
+        });
+
+        els.archiveCanvas.__positions = positions;
+      }
+
+      function drawTimeline() {
+        const { ctx, width, height } = resizeCanvas(els.timelineCanvas);
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = css('--panel');
+        ctx.fillRect(0, 0, width, height);
+        const pad = { left: 34, right: 12, top: 14, bottom: 28 };
+        const plotW = width - pad.left - pad.right;
+        const plotH = height - pad.top - pad.bottom;
+        ctx.strokeStyle = css('--canvas-grid');
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i += 1) {
+          const y = pad.top + plotH * (i / 4);
+          ctx.beginPath();
+          ctx.moveTo(pad.left, y);
+          ctx.lineTo(width - pad.right, y);
+          ctx.stroke();
+        }
+
+        const series = [
+          { key: 'best', color: css('--canvas-task'), label: 'best' },
+          { key: 'meta', color: css('--canvas-meta'), label: 'meta' },
+          { key: 'diversity', color: css('--canvas-memory'), label: 'diversity' },
+          { key: 'average', color: css('--muted'), label: 'avg' },
+        ];
+        const history = state.history;
+        series.forEach((line) => {
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = line.key === 'average' ? 1.2 : 2;
+          ctx.beginPath();
+          history.forEach((point, index) => {
+            const x = pad.left + plotW * (index / Math.max(1, history.length - 1));
+            const y = pad.top + plotH * (1 - clamp(point[line.key]));
+            if (index === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+        });
+
+        ctx.fillStyle = css('--muted');
+        ctx.font = '700 11px Inter, sans-serif';
+        ctx.fillText('0', 12, height - pad.bottom + 4);
+        ctx.fillText('1', 12, pad.top + 4);
+        let legendX = pad.left;
+        series.forEach((line) => {
+          ctx.fillStyle = line.color;
+          ctx.fillRect(legendX, height - 12, 18, 4);
+          ctx.fillStyle = css('--muted');
+          ctx.fillText(line.label, legendX + 24, height - 8);
+          legendX += line.label.length * 7 + 54;
+        });
+      }
+
+      function drawHeatmap() {
+        const contentHeight = Math.max(300, 8 + operators.length * 26);
+        els.heatmapCanvas.style.height = `${contentHeight}px`;
+        const { ctx, width, height } = resizeCanvas(els.heatmapCanvas);
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = css('--panel');
+        ctx.fillRect(0, 0, width, height);
+
+        const columns = [
+          { key: 'survived', label: 'survie', color: css('--green') },
+          { key: 'transferred', label: 'transfert', color: css('--blue') },
+          { key: 'recombined', label: 'recombine', color: css('--orange') },
+          { key: 'failed', label: 'mort', color: css('--red') },
+        ];
+        const padLeft = Math.min(118, Math.max(84, width * 0.43));
+        const padTop = 2;
+        const rowH = Math.max(14, Math.min(22, (height - padTop - 8) / operators.length));
+        const cellW = Math.max(26, (width - padLeft - 8) / columns.length);
+        const labelLimit = Math.max(8, Math.floor((padLeft - 8) / 6.1));
+        operators.forEach((operator, row) => {
+          const y = padTop + row * rowH;
+          const data = state.heatmap.get(operator.id);
+          const max = Math.max(1, data.survived, data.failed, data.transferred, data.recombined);
+          ctx.fillStyle = css('--muted');
+          ctx.font = '700 10px Inter, sans-serif';
+          ctx.fillText(operator.label.slice(0, labelLimit), 0, y + rowH * 0.72);
+          columns.forEach((column, col) => {
+            const value = data[column.key];
+            const alpha = 0.12 + 0.78 * (value / max);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = column.color;
+            ctx.fillRect(padLeft + col * cellW + 2, y + 2, Math.max(14, cellW - 5), rowH - 4);
+            ctx.globalAlpha = 1;
+            if (value > 0) {
+              ctx.fillStyle = '#ffffff';
+              ctx.font = '800 10px Inter, sans-serif';
+              ctx.fillText(String(value), padLeft + col * cellW + cellW * 0.48 - 3, y + rowH * 0.7);
+            }
+          });
+        });
+      }
+
+      function syncControls() {
+        els.playButton.textContent = state.playing ? 'Pause' : 'Lancer';
+        els.speed.value = String(state.settings.speed);
+        els.explore.value = String(Math.round(state.settings.explore * 100));
+        els.reflex.value = String(Math.round(state.settings.reflex * 100));
+        els.transfer.value = String(Math.round(state.settings.transferPressure * 100));
+        els.noise.value = String(Math.round(state.settings.noise * 100));
+        els.showAttractors.checked = state.settings.showAttractors;
+        els.showLabels.checked = state.settings.showLabels;
+        els.speedOut.textContent = `${state.settings.speed}/s`;
+        els.exploreOut.textContent = percent(state.settings.explore);
+        els.reflexOut.textContent = percent(state.settings.reflex);
+        els.transferOut.textContent = percent(state.settings.transferPressure);
+        els.noiseOut.textContent = percent(state.settings.noise);
+        document.querySelectorAll('.segment-button').forEach((button) => {
+          button.classList.toggle('active', button.dataset.mode === state.mode);
+        });
+        document.querySelectorAll('input[type="range"]').forEach((input) => {
+          const min = Number(input.min);
+          const max = Number(input.max);
+          const value = Number(input.value);
+          input.style.setProperty('--range-progress', `${((value - min) / (max - min)) * 100}%`);
+        });
+      }
+
+      function renderInspector() {
+        const selected = state.archive.find((agent) => agent.id === state.selectedId) ?? bestAgent();
+        const phase = phaseFor(selected.phase);
+        els.selectedName.textContent = `Agent ${selected.id}`;
+        els.selectedMeta.textContent = selected.label;
+        els.selectedPhase.textContent = phase.label;
+        els.selectedPhase.style.background = phase.color;
+        els.taskFitness.textContent = format(selected.taskFitness);
+        els.metaFitness.textContent = format(selected.metaFitness);
+        els.stabilityValue.textContent = format(selected.z.stability);
+        els.transferValue.textContent = format(selected.z.transfer);
+        els.capabilityList.innerHTML = '';
+        capabilityNames.forEach(([key, label]) => {
+          const row = document.createElement('div');
+          row.className = 'capability-row';
+          const value = selected.z[key];
+          row.innerHTML = `<span>${label}</span><span class="bar"><i style="width:${percent(value)};background:${key === 'memory' ? css('--green') : key === 'reflexivity' ? css('--orange') : css('--blue')}"></i></span><strong>${format(value)}</strong>`;
+          els.capabilityList.appendChild(row);
+        });
+
+        const best = bestAgent();
+        const bestMeta = bestMetaAgent();
+        els.bestScore.textContent = format(best.fitness);
+        els.bestMetaScore.textContent = format(bestMeta.metaFitness);
+        els.diversityScore.textContent = format(diversity());
+        els.archiveCount.textContent = String(state.archive.length);
+        els.generationCount.textContent = String(state.generation);
+      }
+
+      function renderPhaseList() {
+        els.phaseList.innerHTML = '';
+        const counts = new Map(phases.map((phase) => [phase.id, 0]));
+        state.archive.forEach((agent) => counts.set(agent.phase, (counts.get(agent.phase) ?? 0) + 1));
+        const max = Math.max(1, ...counts.values());
+        phases.forEach((phase) => {
+          const count = counts.get(phase.id) ?? 0;
+          const row = document.createElement('div');
+          row.className = 'phase-row';
+          row.innerHTML = `<i class="swatch" style="background:${phase.color}"></i><span><b>${phase.label}</b><small>${phase.cue}</small></span><strong>${count}</strong><span class="phase-meter"><i style="width:${percent(count / max)};background:${phase.color}"></i></span>`;
+          els.phaseList.appendChild(row);
+        });
+      }
+
+      function renderOperatorList() {
+        els.operatorList.innerHTML = '';
+        const ranked = operators
+          .map((operator) => {
+            const heat = state.heatmap.get(operator.id);
+            const score = heat.survived * 2 + heat.transferred * 2 + heat.recombined * 1.5 - heat.failed * 0.5;
+            return { operator, heat, score, weight: state.operatorWeights.get(operator.id) ?? 1 };
+          })
+          .sort((a, b) => (b.score + b.weight) - (a.score + a.weight))
+          .slice(0, 5);
+        ranked.forEach(({ operator, heat, weight }) => {
+          const row = document.createElement('div');
+          row.className = 'operator-row';
+          row.innerHTML = `<i class="swatch" style="background:${operatorColor(operator.id)}"></i><span><b>${operator.label}</b><small>${heat.survived} survies, ${heat.transferred} transferts</small></span><strong>${format(weight)}</strong>`;
+          els.operatorList.appendChild(row);
+        });
+      }
+
+      function syncThemeButton() {
+        const dark = document.body.dataset.theme === 'dark';
+        els.themeButton.setAttribute('aria-label', dark ? 'Activer le mode clair' : 'Activer le mode sombre');
+        els.themeButton.setAttribute('title', dark ? 'Mode clair' : 'Mode sombre');
+      }
+
+      function syncGraphTitle() {
+        const titles = {
+          archive: "Archive Graph 3D: (A, M) -> (A', M')",
+          latent: 'Latent Capability Space 3D',
+          phases: 'Phases de développement 3D',
+          transfer: 'Transfer Map 3D: meta-fitness x transfert',
+        };
+        els.graphTitle.textContent = titles[state.mode] ?? titles.archive;
+      }
+
+      function render() {
+        syncControls();
+        syncThemeButton();
+        syncGraphTitle();
+        drawArchive();
+        drawTimeline();
+        drawHeatmap();
+        renderInspector();
+        renderPhaseList();
+        renderOperatorList();
+        const best = bestAgent();
+        const meta = bestMetaAgent();
+        els.simSubtitle.textContent = `${state.archive.length} hyperagents · best ${format(best.fitness)} · meta-process ${format(meta.metaFitness)} · mode ${state.mode}`;
+      }
+
+      function tick(timestamp = 0) {
+        if (state.playing) {
+          if (!state.lastTick) state.lastTick = timestamp;
+          const elapsed = Math.min(0.35, (timestamp - state.lastTick) / 1000);
+          state.lastTick = timestamp;
+          state.mutationCarry += elapsed * state.settings.speed;
+          const steps = Math.min(6, Math.floor(state.mutationCarry));
+          if (steps > 0) {
+            for (let i = 0; i < steps; i += 1) mutate();
+            state.mutationCarry -= steps;
+            render();
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      function pointerAgent(event) {
+        const rect = els.archiveCanvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const positions = els.archiveCanvas.__positions;
+        if (!positions) return null;
+        let best = null;
+        let bestDist = Infinity;
+        state.archive.forEach((agent) => {
+          const pos = positions.get(agent.id);
+          if (!pos) return;
+          const dist = Math.hypot(pos.x - x, pos.y - y);
+          const pickRadius = 8 + (4 + agent.fitness * 7 + agent.metaFitness * 2) * pos.perspective;
+          if (dist < bestDist && dist < pickRadius) {
+            best = agent;
+            bestDist = dist;
+          }
+        });
+        return best;
+      }
+
+      els.archiveCanvas.addEventListener('pointerdown', (event) => {
+        state.view.dragging = true;
+        state.view.dragX = event.clientX;
+        state.view.dragY = event.clientY;
+        els.frame.classList.add('dragging');
+        els.archiveCanvas.setPointerCapture?.(event.pointerId);
+      });
+
+      els.archiveCanvas.addEventListener('pointermove', (event) => {
+        if (state.view.dragging) {
+          const dx = event.clientX - state.view.dragX;
+          const dy = event.clientY - state.view.dragY;
+          state.view.dragX = event.clientX;
+          state.view.dragY = event.clientY;
+          state.view.rotY += dx * 0.008;
+          state.view.rotX = clamp(state.view.rotX + dy * 0.007, -1.18, 0.92);
+          drawArchive();
+          return;
+        }
+        const agent = pointerAgent(event);
+        state.hoverId = agent?.id ?? null;
+        if (agent) {
+          els.tooltip.classList.add('visible');
+          els.tooltip.style.left = `${event.clientX - els.frame.getBoundingClientRect().left}px`;
+          els.tooltip.style.top = `${event.clientY - els.frame.getBoundingClientRect().top}px`;
+          els.tooltip.innerHTML = `<strong>${agent.id}: ${agent.label}</strong>task ${format(agent.taskFitness)} · meta ${format(agent.metaFitness)}<br>${phaseFor(agent.phase).label}`;
+        } else {
+          els.tooltip.classList.remove('visible');
+        }
+        drawArchive();
+      });
+
+      function stopDragging(event) {
+        state.view.dragging = false;
+        els.frame.classList.remove('dragging');
+        if (event?.pointerId !== undefined) els.archiveCanvas.releasePointerCapture?.(event.pointerId);
+      }
+
+      els.archiveCanvas.addEventListener('pointerup', stopDragging);
+      els.archiveCanvas.addEventListener('pointercancel', stopDragging);
+
+      els.archiveCanvas.addEventListener('pointerleave', () => {
+        state.view.dragging = false;
+        els.frame.classList.remove('dragging');
+        state.hoverId = null;
+        els.tooltip.classList.remove('visible');
+        drawArchive();
+      });
+
+      els.archiveCanvas.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const direction = event.deltaY > 0 ? -1 : 1;
+        state.view.zoom = clamp(state.view.zoom + direction * 0.08, 0.72, 1.8);
+        drawArchive();
+      }, { passive: false });
+
+      els.archiveCanvas.addEventListener('click', (event) => {
+        const agent = pointerAgent(event);
+        if (!agent) return;
+        state.selectedId = agent.id;
+        render();
+      });
+
+      els.playButton.addEventListener('click', () => {
+        state.playing = !state.playing;
+        state.lastTick = 0;
+        state.mutationCarry = 0;
+        render();
+      });
+
+      els.stepButton.addEventListener('click', () => {
+        mutate();
+        render();
+      });
+
+      els.fastForwardButton.addEventListener('click', () => {
+        for (let i = 0; i < 25; i += 1) mutate();
+        render();
+      });
+
+      els.resetButton.addEventListener('click', () => reset(state.seed));
+      els.seedButton.addEventListener('click', () => reset(Math.floor(Math.random() * 900000) + 1000));
+      els.bestButton.addEventListener('click', () => {
+        state.selectedId = bestAgent().id;
+        render();
+      });
+
+      els.themeButton.addEventListener('click', () => {
+        const dark = document.body.dataset.theme === 'dark';
+        document.body.dataset.theme = dark ? 'light' : 'dark';
+        render();
+      });
+
+      els.modeGrid.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-mode]');
+        if (!button) return;
+        state.mode = button.dataset.mode;
+        render();
+      });
+
+      [
+        ['speed', 'speed', (value) => Number(value)],
+        ['explore', 'explore', (value) => Number(value) / 100],
+        ['reflex', 'reflex', (value) => Number(value) / 100],
+        ['transfer', 'transferPressure', (value) => Number(value) / 100],
+        ['noise', 'noise', (value) => Number(value) / 100],
+      ].forEach(([elementKey, settingKey, parse]) => {
+        els[elementKey].addEventListener('input', (event) => {
+          state.settings[settingKey] = parse(event.target.value);
+          render();
+        });
+      });
+
+      els.showAttractors.addEventListener('change', (event) => {
+        state.settings.showAttractors = event.target.checked;
+        render();
+      });
+
+      els.showLabels.addEventListener('change', (event) => {
+        state.settings.showLabels = event.target.checked;
+        render();
+      });
+
+      window.addEventListener('resize', render);
+      reset();
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>
